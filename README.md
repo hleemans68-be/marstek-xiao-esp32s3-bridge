@@ -12,7 +12,7 @@ but any Modbus TCP client (e.g. evcc) can talk to the battery through it — the
 
 | Part | Notes |
 |---|---|
-| [Seeed XIAO ESP32-S3](https://www.seeedstudio.com/XIAO-ESP32S3-p-5627.html) | Any XIAO ESP32-S3 variant works |
+| [Seeed XIAO ESP32-S3 (Pre-Soldered)](https://www.seeedstudio.com/Seeed-Studio-XIAO-ESP32S3-Pre-Soldered-p-6334.html) | Any XIAO ESP32-S3 variant works |
 | [Seeed RS485 Breakout Board for XIAO](https://www.seeedstudio.com/RS485-Breakout-Board-for-XIAO-p-6306.html) | TP8485E transceiver, product 113991354 |
 | 4-wire cable to the battery's RS485/Modbus connector | A, B, GND, optionally 5V |
 
