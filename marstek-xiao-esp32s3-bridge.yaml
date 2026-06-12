@@ -1,0 +1,127 @@
+# ============================================================================
+# Marstek Venus E (V2) Modbus TCP bridge
+# Hardware: Seeed XIAO ESP32-S3 + Seeed RS485 Breakout Board for XIAO
+# Purpose:  Transparent Modbus RTU <-> TCP bridge for the Home Assistant
+#           integration https://github.com/ViperRNMC/marstek_venus_modbus
+#
+# Wiring (battery RS485/Modbus connector -> breakout board terminals):
+#   A  -> A
+#   B  -> B
+#   GND-> GND
+#   5V -> 5V terminal  (only if powering from the battery; IN/OUT switch = IN)
+#
+# Board switches:
+#   IN/OUT  -> IN   (5V terminal is a power INPUT)
+#   ON/NC   -> ON   (120 ohm termination, end of point-to-point bus)
+#
+# Pin mapping (XIAO ESP32-S3 on this breakout board):
+#   TX  = D4 = GPIO5
+#   RX  = D5 = GPIO6
+#   DE/RE (direction enable) = D2 = GPIO3
+#
+# After flashing: in Home Assistant, configure the marstek_venus_modbus
+# integration with this device's IP address, port 502, unit ID 1.
+# ============================================================================
+
+esphome:
+  name: marstek-bridge
+  friendly_name: Marstek Modbus Bridge
+
+esp32:
+  board: seeed_xiao_esp32s3
+  framework:
+    type: esp-idf
+
+# NOTE: logger baud_rate 0 disables logging over hardware UART so it can
+# never interfere with the RS485 UART. Logs remain available via API/OTA.
+logger:
+  baud_rate: 0
+
+api:
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Strongly recommended: fixed IP so the HA integration always finds the
+  # bridge. Adjust to your network, or delete this block and make a DHCP
+  # reservation in your router instead.
+  manual_ip:
+    static_ip: 192.168.1.60
+    gateway: 192.168.1.1
+    subnet: 255.255.255.0
+
+  # Fallback hotspot if WiFi credentials fail
+  ap:
+    ssid: "Marstek-Bridge Fallback"
+    password: !secret ap_password
+
+captive_portal:
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/rosenrot00/esphome_modbus_bridge
+    components: [modbus_bridge]
+
+# ---------------------------------------------------------------------------
+# RS485 UART -- Marstek Venus talks Modbus RTU at 115200 8N1
+# If you get zero response from the battery, swap tx_pin and rx_pin first.
+# ---------------------------------------------------------------------------
+uart:
+  id: uart_bus
+  tx_pin: GPIO5        # D4 on XIAO ESP32-S3
+  rx_pin: GPIO6        # D5 on XIAO ESP32-S3
+  baud_rate: 115200
+  rx_buffer_size: 512
+
+# ---------------------------------------------------------------------------
+# Modbus TCP <-> RTU bridge
+# ---------------------------------------------------------------------------
+modbus_bridge:
+  id: mb_bridge
+  uart_id: uart_bus
+  tcp_port: 502
+  rtu_response_timeout: 1000
+  tcp_allowed_clients: 2     # raise if e.g. evcc connects alongside HA
+  de_pin: GPIO3              # D2 = transceiver direction enable
+  re_pin: GPIO3              # same GPIO -> shared-pin mode is automatic
+
+  # Optional safety: only allow Modbus access from your own LAN.
+  # Uncomment and adjust the subnet if you want this.
+  # reject_untrusted_clients: true
+  # trusted_networks:
+  #   - 192.168.1.0/24
+
+# ---------------------------------------------------------------------------
+# Diagnostics in Home Assistant (optional but handy for debugging)
+# ---------------------------------------------------------------------------
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+
+  - platform: uptime
+    name: "Uptime"
+
+  - platform: template
+    name: "RTU Timeouts"
+    accuracy_decimals: 0
+    update_interval: 30s
+    lambda: |-
+      return (int) id(mb_bridge).get_timeouts();
+
+  - platform: template
+    name: "RTU CRC Drops"
+    accuracy_decimals: 0
+    update_interval: 30s
+    lambda: |-
+      return (int) id(mb_bridge).get_drops_rtu_crc();
+
+button:
+  - platform: restart
+    name: "Restart Bridge"
