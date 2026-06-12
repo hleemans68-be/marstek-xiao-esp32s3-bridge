@@ -16,6 +16,12 @@ but any Modbus TCP client (e.g. evcc) can talk to the battery through it — the
 | [Seeed RS485 Breakout Board for XIAO](https://www.seeedstudio.com/RS485-Breakout-Board-for-XIAO-p-6306.html) | TP8485E transceiver, product 113991354 |
 | 4-wire cable to the battery's RS485/Modbus connector | A, B, GND, optionally 5V |
 
+### Photos
+
+| Assembled bridge (XIAO + RS485 breakout) | Breakout board rear, terminal labels |
+|---|---|
+| ![Assembled bridge](images/bridge-photo-1.jpg) | ![Breakout board rear](images/bridge-photo-2.jpg) |
+
 ## Pin mapping (the non-obvious part)
 
 The breakout board wires the TP8485E to the XIAO's **D4/D5** pads — *not* to the
